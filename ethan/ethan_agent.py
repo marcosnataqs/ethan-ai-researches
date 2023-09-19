@@ -71,3 +71,6 @@ class EthanAgent:
         format_example = """[{"key1": value1, "key2": value2, ...}, {"key1": value1, "key2": value2, ...}, ...]"""
         response = self._agent.run(input=prompt, format_example=format_example, history=history)
         return response
+
+        # for step in self._agent.iter({"input": prompt, "format_example": format_example, "history": history}):
+        #     print(step)
