@@ -1,6 +1,5 @@
 import streamlit as st
 from langchain.llms import OpenAI
-from langchain.memory import ConversationBufferMemory
 from langchain.chains import LLMChain
 from langchain.agents import ZeroShotAgent, AgentExecutor
 from langchain.agents.tools import Tool
@@ -45,23 +44,30 @@ class EthanAgent:
         llm = OpenAI(temperature=0, openai_api_key=self._openai_api_key)
 
         # model_name="gpt-3.5-turbo-16k-0613"
-        llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=True)
+        llm_chain = LLMChain(llm=llm, prompt=prompt)
 
         tool_names = [tool.name for tool in tools]
         agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names)
 
-        memory = ConversationBufferMemory(input_key="input")
-
         agent_executor = AgentExecutor.from_agent_and_tools(
-            agent=agent, tools=tools, verbose=True, memory=memory
+            agent=agent, tools=tools, verbose=True
         )
 
         return agent_executor
+    
+    def _get_history(self, messages: list[dict[str, str]]) -> str:
+        history = ""
+        for message in messages:
+            role = 'Human' if message['role'] == 'user' else 'AI'
+            history += f"{role}: {message['content']}\n"
+        return history
 
     # Example prompts:
     # Could you give me the total number of albums and export it into pdf?
+    # Could you export it as CSV but now add the number of tracks as well?
     # Could you list the first 10 artists and export it into CSV? Please add all table columns available.
-    def run(self, prompt: str):
+    def run(self, prompt: str, messages: list[dict[str, str]]):
+        history = self._get_history(messages)
         format_example = """[{"key1": value1, "key2": value2, ...}, {"key1": value1, "key2": value2, ...}, ...]"""
-        response = self._agent.run(input=prompt, format_example=format_example)
+        response = self._agent.run(input=prompt, format_example=format_example, history=history)
         return response
